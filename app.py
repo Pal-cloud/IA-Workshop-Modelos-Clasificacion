@@ -1,9 +1,9 @@
 """
 Aplicación Flask para visualizar y exportar la tarea de investigación
-Autor: Paloma Gómez Salazar
+Autor: Paloma Gómez
 """
 
-from flask import Flask, render_template, send_file
+from flask import Flask, render_template, send_file, jsonify
 import markdown
 import pdfkit
 from pathlib import Path
@@ -19,8 +19,8 @@ def index():
 @app.route('/view')
 def view_document():
     """Muestra el documento en formato HTML"""
-    # Leer el archivo markdown
-    md_path = Path(__file__).parent / 'TAREA_INVESTIGACION_CLASIFICACION.md'
+    # Leer el archivo markdown desde docs/
+    md_path = Path(__file__).parent / 'docs' / 'TAREA_INVESTIGACION_CLASIFICACION.md'
     with open(md_path, 'r', encoding='utf-8') as f:
         md_content = f.read()
     
@@ -36,8 +36,8 @@ def view_document():
 def download_pdf():
     """Genera y descarga el PDF"""
     try:
-        # Leer el archivo markdown
-        md_path = Path(__file__).parent / 'TAREA_INVESTIGACION_CLASIFICACION.md'
+        # Leer el archivo markdown desde docs/
+        md_path = Path(__file__).parent / 'docs' / 'TAREA_INVESTIGACION_CLASIFICACION.md'
         with open(md_path, 'r', encoding='utf-8') as f:
             md_content = f.read()
         
@@ -127,13 +127,13 @@ def download_pdf():
         </html>
         """
         
-        # Guardar HTML temporal
-        temp_html = Path(__file__).parent / 'temp_document.html'
+        # Guardar HTML temporal en carpeta temp/
+        temp_html = Path(__file__).parent / 'temp' / 'temp_document.html'
         with open(temp_html, 'w', encoding='utf-8') as f:
             f.write(full_html)
         
-        # Generar PDF
-        pdf_path = Path(__file__).parent / 'TAREA_INVESTIGACION_CLASIFICACION.pdf'
+        # Generar PDF en carpeta temp/
+        pdf_path = Path(__file__).parent / 'temp' / 'TAREA_INVESTIGACION_CLASIFICACION.pdf'
         
         # Configuración para wkhtmltopdf
         options = {
@@ -159,13 +159,28 @@ def download_pdf():
             mimetype='application/pdf'
         )
     
+    except OSError as e:
+        # Error específico cuando wkhtmltopdf no está instalado
+        if 'wkhtmltopdf' in str(e).lower() or 'no wkhtmltopdf' in str(e).lower():
+            return jsonify({
+                'error': 'wkhtmltopdf_not_found',
+                'message': 'wkhtmltopdf no está instalado en tu sistema'
+            }), 404
+        return jsonify({
+            'error': 'os_error',
+            'message': f'Error del sistema: {str(e)}'
+        }), 500
+    
     except Exception as e:
-        return f"Error al generar PDF: {str(e)}", 500
+        return jsonify({
+            'error': 'general_error',
+            'message': f'Error al generar PDF: {str(e)}'
+        }), 500
 
 @app.route('/download-md')
 def download_md():
     """Descarga el archivo Markdown original"""
-    md_path = Path(__file__).parent / 'TAREA_INVESTIGACION_CLASIFICACION.md'
+    md_path = Path(__file__).parent / 'docs' / 'TAREA_INVESTIGACION_CLASIFICACION.md'
     return send_file(
         md_path,
         as_attachment=True,
