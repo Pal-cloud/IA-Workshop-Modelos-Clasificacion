@@ -188,6 +188,9 @@ def download_md():
         mimetype='text/markdown'
     )
 
+# Para Vercel
+app_vercel = app
+
 if __name__ == '__main__':
     print("\n" + "="*60)
     print("🚀 Servidor iniciado!")
